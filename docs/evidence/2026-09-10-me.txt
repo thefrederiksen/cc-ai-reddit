@@ -1,0 +1,52 @@
+# 2026-09-10 23:02:08 UTC
+$ cc-ai-reddit me <user> --days 7 --limit 20
+comment r/artificial           2026-09-10T17:57:38Z  replies 0  unanswered 0  https://www.reddit.com/r/artificial/comments/1wcjppw/comment/p8zw0xx/
+comment r/ChatGPTCoding        2026-09-10T14:01:49Z  replies 0  unanswered 0  https://www.reddit.com/r/ChatGPTCoding/comments/1wcjhow/comment/p8yco33/
+comment r/ChatGPTCoding        2026-09-10T13:52:31Z  replies 1  unanswered 0  https://www.reddit.com/r/ChatGPTCoding/comments/1wcjhow/comment/p8yan76/
+comment r/artificial           2026-09-10T13:47:25Z  replies 1  unanswered 1  https://www.reddit.com/r/artificial/comments/1wcjppw/comment/p8y9jjo/
+          waiting 8.0h: u/<user>: The cost per verified bug is the stat that actually matters for most teams. Raw bug count looks nice in a headline but if you're burning 1.6x the budget to get 
+          https://www.reddit.com/r/artificial/comments/1wcjppw/comment/p8yqku1/
+post    r/artificial           2026-09-10T13:47:17Z  replies 1  unanswered 0  https://www.reddit.com/r/artificial/comments/1wcjppw/gpt6_astra_vs_gpt56_sol_benchmark_on_50_real_prs/
+comment r/ChatGPTCoding        2026-09-10T13:42:56Z  replies 1  unanswered 0  https://www.reddit.com/r/ChatGPTCoding/comments/1wcjhow/comment/p8y8ky1/
+comment r/ChatGPTCoding        2026-09-10T13:38:52Z  replies 0  unanswered 0  https://www.reddit.com/r/ChatGPTCoding/comments/1wcjhow/comment/p8y7prv/
+post    r/ChatGPTCoding        2026-09-10T13:38:33Z  replies 4  unanswered 3  https://www.reddit.com/r/ChatGPTCoding/comments/1wcjhow/gpt6_astra_vs_gpt56_sol_benchmark_on_50_real_prs/
+          waiting 8.0h: u/<user>: Nobody has answered your actual ask yet, so here is one. Those repos are all public and the PRs you sampled have their fixes sitting in repo history. A model wi
+          https://www.reddit.com/r/ChatGPTCoding/comments/1wcjhow/comment/p8yqh6x/
+          waiting 7.4h: u/<user>: pls repeat a few of the PRs with the same settings, seeing whether each model finds the same bugs again matters here
+          https://www.reddit.com/r/ChatGPTCoding/comments/1wcjhow/comment/p8yyfot/
+          waiting 4.4h: u/<user>: Solid start. A few methodology holes that usually flip model rankings on real PRs:     1) Patch visibility / cutoff: if the bugfix already landed in public befo
+          https://www.reddit.com/r/ChatGPTCoding/comments/1wcjhow/comment/p905ltz/
+comment r/codex                2026-09-10T13:31:08Z  replies 0  unanswered 0  https://www.reddit.com/r/codex/comments/1wc7tcw/comment/p8y63jn/
+comment r/codex                2026-09-10T13:29:50Z  replies 0  unanswered 0  https://www.reddit.com/r/codex/comments/1wc7tcw/comment/p8y5toy/
+comment r/ClaudeCode           2026-09-10T13:28:11Z  replies 0  unanswered 0  https://www.reddit.com/r/ClaudeCode/comments/1wc7v9s/comment/p8y5heq/
+comment r/LLMDevs              2026-09-10T13:26:25Z  replies 1  unanswered 1  https://www.reddit.com/r/LLMDevs/comments/1wc80o1/comment/p8y53zc/
+          waiting 1.8h: u/<user>: Announce it here once done :)
+          https://www.reddit.com/r/LLMDevs/comments/1wc80o1/comment/p915cj3/
+comment r/LLMDevs              2026-09-10T13:26:05Z  replies 1  unanswered 1  https://www.reddit.com/r/LLMDevs/comments/1wc80o1/comment/p8y51ga/
+          waiting 8.2h: u/<user>: Then you have the stronger version of the article for free: report the min/max across the three passes next to the single-pass number. "107 vs 91, and neither m
+          https://www.reddit.com/r/LLMDevs/comments/1wc80o1/comment/p8ymu94/
+comment r/codex                2026-09-10T03:58:05Z  replies 1  unanswered 1  https://www.reddit.com/r/codex/comments/1wc7tcw/comment/p8vwv2c/
+          waiting 16.2h: u/<user>: I think bug N is not a good metric. You'd need to evaluate the impactfulness of the findings or bugs to get any type of sensible eval. 
+          https://www.reddit.com/r/codex/comments/1wc7tcw/comment/p8wjz9g/
+comment r/LLMDevs              2026-09-10T03:54:27Z  replies 1  unanswered 1  https://www.reddit.com/r/LLMDevs/comments/1wc80o1/comment/p8vwa0o/
+          waiting 18.6h: u/<user>: Sol pulling ahead on raw bug count while being cheaper per find is the kind of tradeoff that makes budget calls easy, even if Astra's faster.
+          https://www.reddit.com/r/LLMDevs/comments/1wc80o1/comment/p8w15h3/
+post    r/LLMDevs              2026-09-10T03:53:39Z  replies 2  unanswered 0  https://www.reddit.com/r/LLMDevs/comments/1wc80o1/gpt6_astra_vs_gpt56_sol_50pr_code_review_benchmark/
+comment r/ZaiGLM               2026-09-10T03:49:31Z  replies 0  unanswered 0  https://www.reddit.com/r/ZaiGLM/comments/1wc7xbe/comment/p8vvh4l/
+post    r/ZaiGLM               2026-09-10T03:49:13Z  replies 3  unanswered 3  https://www.reddit.com/r/ZaiGLM/comments/1wc7xbe/gpt6_astra_vs_gpt56_sol_50pr_code_review_benchmark/
+          waiting 15.6h: u/<user>: This is off topic totally. What it does with [Z.AI](http://Z.AI) and GLM?
+          https://www.reddit.com/r/ZaiGLM/comments/1wc7xbe/comment/p8woa9r/
+          waiting 8.5h: u/<user>: You need to teach your spambot to be more selective about where it posts. This is completely unrelated to this subreddit. 
+          https://www.reddit.com/r/ZaiGLM/comments/1wc7xbe/comment/p8yjj3d/
+          waiting 1.7h: u/<user>: Real PRs are way more useful than made-up tests. Next time, I'd love to see the bugs grouped by how serious they are. One major security bug should matter more 
+          https://www.reddit.com/r/ZaiGLM/comments/1wc7xbe/comment/p916iox/
+comment r/vibecoding           2026-09-10T03:48:04Z  replies 0  unanswered 0  https://www.reddit.com/r/vibecoding/comments/1wc7w8g/comment/p8vv8pf/
+post    r/vibecoding           2026-09-10T03:47:51Z  replies 0  unanswered 0  https://www.reddit.com/r/vibecoding/comments/1wc7w8g/gpt6_astra_vs_gpt56_sol_50pr_code_review_benchmark/
+comment r/ClaudeCode           2026-09-10T03:46:43Z  replies 0  unanswered 0  https://www.reddit.com/r/ClaudeCode/comments/1wc7v9s/comment/p8vv0ps/
+post    r/ClaudeCode           2026-09-10T03:46:27Z  replies 1  unanswered 0  https://www.reddit.com/r/ClaudeCode/comments/1wc7v9s/gpt6_astra_vs_gpt56_sol_on_50_real_prs_looking/
+post    r/machinelearningnews  2026-09-10T03:44:17Z  replies 0  unanswered 0  https://www.reddit.com/r/machinelearningnews/comments/1wc7tm7/gpt6_astra_vs_gpt56_sol_benchmark_on_50_real_prs/
+post    r/codex                2026-09-10T03:43:55Z  replies 3  unanswered 1  https://www.reddit.com/r/codex/comments/1wc7tcw/gpt6_astra_vs_gpt56_sol_benchmark_on_50_real_prs/
+          waiting 15.3h: u/<user>: What's the reasoning level used for both?
+          https://www.reddit.com/r/codex/comments/1wc7tcw/comment/p8wqlmq/
+RESULT me user=<user> days=7 posts=8 comments=16 threads=8 unanswered=12 source=archive
+# exit=0

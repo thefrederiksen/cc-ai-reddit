@@ -1,0 +1,23 @@
+# 2026-09-10 23:06:23 UTC
+$ cc-ai-reddit thread https://www.reddit.com/r/ChatGPTCoding/comments/1wcjhow/gpt6_astra_vs_gpt56_sol_benchmark_on_50_real_prs/
+r/ChatGPTCoding  GPT-6 Astra vs GPT-5.6 Sol: benchmark on 50 real PRs, looking for feedback on the methodology
+  u/<user>  2026-09-10T13:38:33.138000+0000  https://www.reddit.com/r/ChatGPTCoding/comments/1wcjhow/gpt6_astra_vs_gpt56_sol_benchmark_on_50_real_prs/
+  We benchmarked GPT-6 Astra vs GPT-5.6 Sol across 50 real PRs from Cal, Sentry, Discourse, Keycloak and Grafana.
+  
+  Sol found 107 confirmed bugs vs 91 for Astra, while Astra had higher precision and lower latency. Every finding was independently verified.
+  
+  We're doing Fable vs Opus next week, so would appreciate feedback on the evaluation before we run the next one.
+  
+  Dropping the link in the comments if anyone wants to check it out.
+  - u/<user>: Better compare OpenAI vs. Anthropic vs. Gemini
+    - u/<user>: gemini? i guess kimi or glm should be better?
+      - u/<user>: Yeah, Gemini is not worth it.
+        - u/<user>: they are good but not able to keep up with the top labs rn, wish they make a comeback soon
+          - u/<user>: When Gemini 4 will release in 2029 I'm sure it will be good!
+            - u/<user>: this soon??? I thought it was gonna be late 2030
+  - u/<user>: Nobody has answered your actual ask yet, so here is one. Those repos are all public and the PRs you sampled have their fixes sitting in repo history. A model with a later training cutoff may have seen
+  - u/<user>: Solid start. A few methodology holes that usually flip model rankings on real PRs:  Patch visibility / cutoff: if the bugfix already landed in public before the model's cutoff, you're partly testing r
+  - u/<user>: full report here : https://entelligence.ai/blogs/gpt-6-astra-cost-1.6x-more-per-verified-bug-than-gpt-5.6-sol
+  - u/<user>: pls repeat a few of the PRs with the same settings, seeing whether each model finds the same bugs again matters here
+RESULT thread id=1wcjhow source=live comments_held=10 comments_stated=10
+# exit=0

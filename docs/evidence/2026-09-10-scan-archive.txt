@@ -1,0 +1,25 @@
+# 2026-09-10 23:01:55 UTC
+$ cc-ai-reddit scan ChatGPTCoding --new --limit 10 --max-age-hours 24
+  1.3h    1 comments  score 1*     My effective cost per million tokens: Sonnet 5 $0.26, Fable 5.1 $0.69, Opus 5 $0.72. Has anyone measured the same for OpenAI models?
+        https://www.reddit.com/r/ChatGPTCoding/comments/1wcwv4y/my_effective_cost_per_million_tokens_sonnet_5_026/
+  1.6h    1 comments  score 1*     My first real software project went from an idea to a working learning platform in ~35 hours
+        https://www.reddit.com/r/ChatGPTCoding/comments/1wcwchb/my_first_real_software_project_went_from_an_idea/
+  2.9h    0 comments  score 1*     I taught my coding agent to scribble on the real DOM. Is this useful?
+        https://www.reddit.com/r/ChatGPTCoding/comments/1wcubur/i_taught_my_coding_agent_to_scribble_on_the_real/
+  3.6h    1 comments  score 1*     Our AI agent "passed CI" and still got flagged by security review. Anyone else hitting this wall?
+        https://www.reddit.com/r/ChatGPTCoding/comments/1wct1p4/our_ai_agent_passed_ci_and_still_got_flagged_by/
+  3.7h    1 comments  score 1*     Our AI agent "passed CI" and still got flagged by security review. Anyone else hitting this wall?
+        https://www.reddit.com/r/ChatGPTCoding/comments/1wct0ui/our_ai_agent_passed_ci_and_still_got_flagged_by/
+  6.1h    1 comments  score 1*     [ Removed by moderator ]
+        https://www.reddit.com/r/ChatGPTCoding/comments/1wcow03/what_do_you_use_for_ai_app_builders/
+  6.7h    1 comments  score 1*     I added content scanning after realizing metadata checks weren't enough
+        https://www.reddit.com/r/ChatGPTCoding/comments/1wcnsma/i_added_content_scanning_after_realizing_metadata/
+  6.9h    1 comments  score 1*     My wife used to send me every small fix for our app. Now she writes a ticket and an agent opens the PR
+        https://www.reddit.com/r/ChatGPTCoding/comments/1wcnkuo/my_wife_used_to_send_me_every_small_fix_for_our/
+  7.4h    2 comments  score 1*     GPT-6 ASTRA is insane...
+        https://www.reddit.com/r/ChatGPTCoding/comments/1wcmpzs/gpt6_astra_is_insane/
+  8.7h    0 comments  score 1*     my wife used to send me every small fix for our app. now she writes a ticket and an agent opens the PR
+        https://www.reddit.com/r/ChatGPTCoding/comments/1wckjhe/my_wife_used_to_send_me_every_small_fix_for_our/
+  * score as archived: seconds after posting for new posts. Use --live for current scores.
+RESULT scan sub=ChatGPTCoding source=archive sort=new n=10 max_age_hours=24
+# exit=0

@@ -1,0 +1,11 @@
+# 2026-09-10 23:02:23 UTC
+$ cc-ai-reddit score <home>/AppData/Local/Temp/claude/D--ReposFred-cc-ai-reddit/be90985f-b944-40c7-8d81-296d02e93be2/scratchpad/drafts/../draft-post.md --sub ClaudeAI --when 2026-09-11 15:00
+r/ClaudeAI draft post: 'What actually broke first when I ran several coding agents on one repo at the same time'
+  flair Discussion (NOT SEEN IN TRAINING - scored as unknown), 126 words, posting time 2026-09-11 15:00 UTC, author posts 0
+  p(score 0) 0.23   p(score 1-2) 0.21   p(score 3+) 0.55
+  BAND 5 of 5 by p(score 3+). Of the 3985 validation posts in this band, 10% scored 0 or less, half 2 or less, 90% 85 or less.
+  Point estimate 1. Its validation error: MAE 21.08; always guessing 1 scores MAE 21.02.
+  WARNING the point estimate is NOT better than a constant on validation. Read the band, not the number.
+  model <home>\AppData\Local\cc-ai-reddit\models\claudeai: trained on 52333 posts created before 2026-01-01, validated on 19925 posts created on or after 2026-01-01. Structural features only; it cannot read meaning.
+RESULT score sub=ClaudeAI predicted=1 p_zero=0.233 p_low=0.215 p_high=0.552 band=5/5 band_n=3985 band_p10=0 band_p50=2 band_p90=85 mae=21.08 naive_mae=21.02
+# exit=0

@@ -1,0 +1,4 @@
+# 2026-09-10 23:03:36 UTC
+$ cc-ai-reddit shot --out docs/evidence/2026-09-10-shot-existing-tab.png
+FAIL found 0 Reddit tabs in this browser; name the page to capture: shot <url>
+# exit=1
