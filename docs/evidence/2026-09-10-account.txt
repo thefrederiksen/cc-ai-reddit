@@ -1,0 +1,6 @@
+# 2026-09-10 22:54:34 UTC
+$ cc-ai-reddit account
+signed in as u/<user> (t2_<account>)
+pinned account: none
+RESULT account signed_in=yes id=t2_<account> pinned=none match=no
+# exit=0

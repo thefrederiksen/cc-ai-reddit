@@ -1,0 +1,4 @@
+# 2026-09-10 23:02:28 UTC
+$ cc-ai-reddit comment https://www.reddit.com/r/ChatGPTCoding/comments/1wcjhow/gpt6_astra_vs_gpt56_sol_benchmark_on_50_real_prs/ --file <home>/AppData/Local/Temp/claude/D--ReposFred-cc-ai-reddit/be90985f-b944-40c7-8d81-296d02e93be2/scratchpad/drafts/link.txt
+REFUSED rule=link the text contains 1 link(s): 'example.com'. Links are refused by default: say the name and let people search. (--allow-links exists for other users of this tool; the refusal is the default for a reason.)
+# exit=3

@@ -1,0 +1,22 @@
+# 2026-09-10 23:09:03 UTC
+$ py -3.11 tools/train_model.py download ChatGPTCoding --since 2026-03 --data <scratch>/train-data
+[19:09:03] 2026-09: not settled yet (scores need 7 days); stopping here
+RESULT download sub=ChatGPTCoding months=6 new_posts=0 dir=<home>/AppData/Local/Temp/claude/D--ReposFred-cc-ai-reddit/be90985f-b944-40c7-8d81-296d02e93be2/scratchpad/train-data\chatgptcoding
+# exit=0
+$ py -3.11 tools/train_model.py build ChatGPTCoding --data <scratch>/train-data --holdout-from 2026-08-01 --out <scratch>/model-chatgptcoding
+[19:09:04] training LightGBM classifier on 1030 posts
+[WinError 2] The system cannot find the file specified
+[19:09:06] training XGBoost classifier
+[19:09:07] training XGBoost regressor
+RESULT model sub=ChatGPTCoding out=<home>/AppData/Local/Temp/claude/D--ReposFred-cc-ai-reddit/be90985f-b944-40c7-8d81-296d02e93be2/scratchpad/model-chatgptcoding-2 train=1030 val=579 mae=16.29 naive_mae=16.17 bands_p90=1/1/1.6/10/10.5
+# exit=0
+$ cc-ai-reddit score post.md --sub ChatGPTCoding --model-dir <scratch>/model-chatgptcoding --when "2026-09-11 15:00"
+r/ChatGPTCoding draft post: "How do you check that an agent's passing tests actually test its change?"
+  flair Discussion, 81 words, posting time 2026-09-11 15:00 UTC, author posts 0
+  p(score 0) 0.11   p(score 1-2) 0.67   p(score 3+) 0.22
+  BAND 4 of 5 by p(score 3+). Of the 116 validation posts in this band, 10% scored 0 or less, half 1 or less, 90% 10 or less.
+  Point estimate 1. Its validation error: MAE 16.29; always guessing 1 scores MAE 16.17.
+  WARNING the point estimate is NOT better than a constant on validation. Read the band, not the number.
+  model <home>/AppData/Local/Temp/claude/D--ReposFred-cc-ai-reddit/be90985f-b944-40c7-8d81-296d02e93be2/scratchpad/model-chatgptcoding-2: trained on 1030 posts created before 2026-08-01, validated on 579 posts created on or after 2026-08-01. Structural features only; it cannot read meaning.
+RESULT score sub=ChatGPTCoding predicted=1 p_zero=0.107 p_low=0.673 p_high=0.220 band=4/5 band_n=116 band_p10=0 band_p50=1 band_p90=10 mae=16.29 naive_mae=16.17
+# exit=0

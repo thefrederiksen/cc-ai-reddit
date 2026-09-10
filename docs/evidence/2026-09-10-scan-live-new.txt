@@ -1,0 +1,13 @@
+# 2026-09-10 22:53:38 UTC
+$ cc-ai-reddit scan ChatGPTCoding --live --new --limit 10 --max-age-hours 24
+[18:53:47] 27 posts rendered after scrolling; 4 inside the last 24 hours
+  1.5h    1 comments  score 0      My first real software project went from an idea to a working learning platform in ~35 hours
+        https://www.reddit.com/r/ChatGPTCoding/comments/1wcwchb/my_first_real_software_project_went_from_an_idea/
+  9.3h   10 comments  score 3      GPT-6 Astra vs GPT-5.6 Sol: benchmark on 50 real PRs, looking for feedback on the methodology
+        https://www.reddit.com/r/ChatGPTCoding/comments/1wcjhow/gpt6_astra_vs_gpt56_sol_benchmark_on_50_real_prs/
+ 10.3h   95 comments  score 45     Hot take: the agentic workflow is deeply wrong
+        https://www.reddit.com/r/ChatGPTCoding/comments/1wci00g/hot_take_the_agentic_workflow_is_deeply_wrong/
+ 16.5h    7 comments  score 0      Why doesn't Computer Use work at all?
+        https://www.reddit.com/r/ChatGPTCoding/comments/1wcax6o/why_doesnt_computer_use_work_at_all/
+RESULT scan sub=ChatGPTCoding source=live sort=new n=4 max_age_hours=24
+# exit=0

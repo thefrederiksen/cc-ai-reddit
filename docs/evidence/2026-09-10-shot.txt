@@ -1,0 +1,4 @@
+# 2026-09-10 22:54:20 UTC
+$ cc-ai-reddit shot https://www.reddit.com/r/ChatGPTCoding/ --out docs/evidence/2026-09-10-shot-subreddit.png
+RESULT shot path=docs/evidence/2026-09-10-shot-subreddit.png url=https://www.reddit.com/r/ChatGPTCoding/
+# exit=0

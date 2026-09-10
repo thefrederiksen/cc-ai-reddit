@@ -1,0 +1,16 @@
+# 2026-09-10 23:02:49 UTC
+$ cc-ai-reddit comment https://www.reddit.com/r/ChatGPTCoding/comments/1wcjhow/gpt6_astra_vs_gpt56_sol_benchmark_on_50_real_prs/ --file <home>/AppData/Local/Temp/claude/D--ReposFred-cc-ai-reddit/be90985f-b944-40c7-8d81-296d02e93be2/scratchpad/drafts/comment.txt --shot docs/evidence/2026-09-10-comment-dry-run.png
+RULES r/ChatGPTCoding, read from the live page at 2026-09-10 23:02:58 UTC:
+  1. Stay on topic: Posts must be about using AI to help with coding, debugging, testing, building, or maintaining software.
+  2. Be Constructive: Be respectful and helpful. No harassment, personal attacks, insults, or hostile low-effort replies. Critique the idea, code, or tool, not the person.
+  3. Use the right flair: Use the flair that best fits your post. Do not use a question or discussion post to indirectly promote a project.
+  4. No spam, scams, or access reselling: Do not post spam, scams, deceptive promotions, referral abuse, or offers to sell, trade, or distribute accounts, API keys, subscriptions, or model access.
+  5. No self-promotion (FOSS included): Posts mainly promoting a tool, product, service, blog, or project go in the weekly self-promotion thread. Free and open source still counts. Test: delete the link - if nothing is left, it's an ad. See also reddit's self-promotion guidelines. For useful AI coding projects, see rule 6.
+  6. Project posts MUST state a problem, a comparison, and what you did: AI coding project posts must have: Problem: what it solves. Comparison: the closest existing solutions, what's different about yours, and evidence (numbers when possible: benchmarks, cost, latency, size). What you did: your solution or approach, what you've learnt, what worked, what didn't. Vibe-coded apps are allowed if the post is a write-up of how you built it. Make sure it fits Resource and Tips flair.
+  7. No AI Slop: No raw AI output or low-value walls of text. AI for grammar/clarity is fine.
+WOULD SEND comment to r/ChatGPTCoding as u/<user> (t2_<account>):
+  | One thing that would make the numbers easier to trust: run a handful of the same PRs three times each with identical settings and report how often each model finds the same bug again.
+  |
+  | If the repeat rate is low, the gap between the two models may sit inside the noise.
+RESULT staged kind=comment sub=ChatGPTCoding target=https://www.reddit.com/r/ChatGPTCoding/comments/1wcjhow/gpt6_astra_vs_gpt56_sol_benchmark_on_50_real_prs/ account=t2_<account> pinned=no chars=268 shot=docs/evidence/2026-09-10-comment-dry-run.png
+# exit=0

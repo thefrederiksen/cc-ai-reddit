@@ -1,0 +1,10 @@
+# The wheel's contents are fixed by py-modules and packages in pyproject.toml.
+# This file governs the SOURCE DISTRIBUTION only: docs/evidence carries captured
+# Reddit output, and none of docs, tests or tools belongs in a download.
+include README.md
+include LICENSE
+include requirements.txt
+prune docs
+prune tests
+prune tools
+exclude cc-ai-reddit.cmd

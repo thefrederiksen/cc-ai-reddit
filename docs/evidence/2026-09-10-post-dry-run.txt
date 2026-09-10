@@ -1,0 +1,22 @@
+# 2026-09-10 23:06:29 UTC
+$ cc-ai-reddit post ChatGPTCoding --title How do you check that an agent's passing tests actually test its change? --file <home>/AppData/Local/Temp/claude/D--ReposFred-cc-ai-reddit/be90985f-b944-40c7-8d81-296d02e93be2/scratchpad/drafts/post-body.txt --flair Discussion --shot docs/evidence/2026-09-10-post-dry-run.png
+RULES r/ChatGPTCoding, read from the live page at 2026-09-10 23:06:36 UTC:
+  1. Stay on topic: Posts must be about using AI to help with coding, debugging, testing, building, or maintaining software.
+  2. Be Constructive: Be respectful and helpful. No harassment, personal attacks, insults, or hostile low-effort replies. Critique the idea, code, or tool, not the person.
+  3. Use the right flair: Use the flair that best fits your post. Do not use a question or discussion post to indirectly promote a project.
+  4. No spam, scams, or access reselling: Do not post spam, scams, deceptive promotions, referral abuse, or offers to sell, trade, or distribute accounts, API keys, subscriptions, or model access.
+  5. No self-promotion (FOSS included): Posts mainly promoting a tool, product, service, blog, or project go in the weekly self-promotion thread. Free and open source still counts. Test: delete the link - if nothing is left, it's an ad. See also reddit's self-promotion guidelines. For useful AI coding projects, see rule 6.
+  6. Project posts MUST state a problem, a comparison, and what you did: AI coding project posts must have: Problem: what it solves. Comparison: the closest existing solutions, what's different about yours, and evidence (numbers when possible: benchmarks, cost, latency, size). What you did: your solution or approach, what you've learnt, what worked, what didn't. Vibe-coded apps are allowed if the post is a write-up of how you built it. Make sure it fits Resource and Tips flair.
+  7. No AI Slop: No raw AI output or low-value walls of text. AI for grammar/clarity is fine.
+WOULD SEND post to r/ChatGPTCoding as u/<user> (t2_<account>):
+  title | How do you check that an agent's passing tests actually test its change?
+  | When an agent reports that all tests pass, I have started checking whether any of those tests would have failed before its change.
+  |
+  | Twice this month the answer was no. The tests were real, they ran, and they covered code the change never touched.
+  |
+  | The check that caught it was cheap: revert the change, run the new or edited tests, and expect at least one failure.
+  |
+  | How do other people verify that a passing suite actually exercises what the agent changed?
+[19:07:00] answering the page's leave prompt with Leave: the form was proven empty first
+RESULT staged kind=post sub=ChatGPTCoding target=https://www.reddit.com/r/ChatGPTCoding/ account=t2_<account> pinned=no chars=456 shot=docs/evidence/2026-09-10-post-dry-run.png
+# exit=0

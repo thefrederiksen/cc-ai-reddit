@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cc-ai-reddit"
+version = "0.1.0"
+description = "Read Reddit, and post and comment on it, through your own signed-in browser - with subreddit rules, human pace and duplicate guards enforced by the tool."
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+license-files = ["LICENSE"]
+dependencies = ["browser-harness"]
+
+[project.optional-dependencies]
+# Only `cc-ai-reddit score` needs these. Everything else runs without them.
+score = ["numpy>=1.24", "pandas>=2.0", "lightgbm>=4.0", "xgboost>=2.0", "pyarrow>=14.0"]
+
+[project.scripts]
+cc-ai-reddit = "cc_ai_reddit:main"
+
+[project.urls]
+Source = "https://github.com/thefrederiksen/cc-ai-reddit"
+
+# cc_ai_reddit stays a top-level module at the repository root so that
+# `py -3.11 cc_ai_reddit.py` works with no install (the .cmd shim runs the file).
+# Discovery is not used: left to itself setuptools would ship docs/, tests/ and tools/.
+[tool.setuptools]
+py-modules = ["cc_ai_reddit"]
+packages = ["cc_ai_reddit_kit"]
+include-package-data = false

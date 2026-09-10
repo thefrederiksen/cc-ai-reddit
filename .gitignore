@@ -10,3 +10,5 @@ BRIEF.md
 # Screenshots show the signed-in account and other people's names. They stay
 # on the machine that took them; the dated .txt evidence beside them is redacted.
 docs/evidence/*.png
+# Local agent harness state, not part of the tool.
+.claude/sounds/
