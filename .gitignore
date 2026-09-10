@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+build/
+*.egg-info/
+.pytest_cache/
+.env
+*.log
+# The build mandate names private paths, profiles and strategy. It stays local.
+BRIEF.md
+# Screenshots show the signed-in account and other people's names. They stay
+# on the machine that took them; the dated .txt evidence beside them is redacted.
+docs/evidence/*.png
