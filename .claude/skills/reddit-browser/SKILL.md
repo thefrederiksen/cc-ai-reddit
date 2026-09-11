@@ -131,6 +131,14 @@ All measured on www.reddit.com, 2026-09-10.
   zero-size box until it is scrolled into view.
 - **Rich text composer.** A Lexical editor: text inserts and reads back
   exactly, Enter starts a paragraph, markdown is NOT rendered.
+- **Reddit keeps unsent comments and puts them back.** Every edit in a comment
+  box is saved in the browser (`localStorage`, `comment-draft-items-<viewer
+  user-id>`, one entry per thread box or per Reply box) and restored when that
+  box opens again, after a reload and after the editor was emptied and closed.
+  Emptying the editor does not remove it. The tool empties a box that opens
+  holding text before it types a character, removes the saved entry on every
+  discard, and proves it by reloading the page and reopening the box empty.
+  A composer mismatch showing the draft inside other text is this.
 - **Ctrl+A as a plain key press does not select a textarea.** The post title
   kept its text through three attempts; Chrome needs the SelectAll editing
   command on the key down.

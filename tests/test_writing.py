@@ -5,8 +5,14 @@
 touching a browser. Each test asserts what WAS called as well as what was not,
 so a flow that silently skipped everything could not pass by pressing nothing.
 
+The comment box itself is driven through the real CommentSurface against a
+model of the page that behaves the way Reddit was measured to behave: every
+edit is saved in the browser, the saved text comes back when the box opens,
+and emptying the editor does not remove the saved copy.
+
 No browser, no network. State goes to a temporary directory.
 """
+import json
 import os
 import re
 import shutil
@@ -14,11 +20,13 @@ import sys
 import tempfile
 import time
 import unittest
+from contextlib import contextmanager
+from unittest import mock
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 
-from cc_ai_reddit_kit import guardrails as G, writing as W
+from cc_ai_reddit_kit import guardrails as G, selectors as SEL, writing as W
 from cc_ai_reddit_kit.state import Fail, Refused
 
 RULES = [{"n": 1, "title": "Stay on topic", "text": "Posts must be about the subject of this community."}]
@@ -217,6 +225,236 @@ class WhatWasTypedIsWhatWouldBeSent(FlowCase):
         with self.assertRaises(Fail):
             self.run_flow(s)
         self.assertNotIn("open_composer", s.calls)
+
+
+# ---------------------------------------------------------------- the comment box
+
+class Page(object):
+    """One thread page with one comment box, standing in for the browser.
+
+    Behaves as measured on Reddit: every edit is saved in the browser under the
+    thread; opening the box puts the saved text back; select-all and delete
+    empties the editor and leaves the saved copy alone; a reload keeps it.
+    Only the handles CommentSurface uses are answered - anything else is an
+    assertion, so a test cannot pass on a read the model never served."""
+
+    URL = "https://www.reddit.com/r/SubA/comments/abc123/a_thread/"
+    KEY = ("t3_abc123", None)
+    TRIGGER = (100, 300)
+    EDITOR = (120, 340)
+    CANCEL = (400, 420)
+    SUBMIT = (480, 420)
+
+    def __init__(self, saved=None, stuck=False, restores_on_load=False, unreadable_after_shot=False):
+        self.saved = dict(saved or {})
+        self.stuck = stuck                          # select-all and delete leaves the text in place
+        self.restores_on_load = restores_on_load    # something outside this page writes the text back on load
+        self.unreadable_after_shot = unreadable_after_shot
+        self.unreadable = False
+        self.open = False
+        self.editor = ""
+        self.opened_with = []
+        self.inserts = []
+        self.loads = 0
+        self.editor_reads = 0
+        self.last_typed = ""
+
+    def goto(self, url):
+        self.loads += 1
+        self.open, self.editor = False, ""
+        if self.restores_on_load and self.last_typed:
+            self.saved[self.KEY] = self.last_typed
+        return self.URL
+
+    def url(self):
+        return self.URL
+
+    def me(self):
+        return {"name": "someone", "id": "t2_fake"}
+
+    @contextmanager
+    def focused(self):
+        yield
+
+    def wait_for(self, expr, what, timeout=20):
+        value = self.js(expr)
+        if not value:
+            raise Fail("%s did not appear" % what)
+        return value
+
+    def scroll_to(self, expr, what):
+        return self.js(expr)
+
+    def js(self, expr):
+        if expr == SEL.THREAD_JS:
+            return {"post": {"id": "abc123", "subreddit": "SubA", "title": "a thread", "locked": False,
+                             "archived": False}, "comments": []}
+        if expr == SEL.RULES_JS:
+            return RULES
+        if expr == W.TRIGGER_RECT_JS:
+            return {"x": self.TRIGGER[0], "y": self.TRIGGER[1], "h": 40}
+        if expr in (W.EDITORS_JS, W.EDITORS_JS + ".length"):
+            self.editor_reads += 1
+            if self.unreadable:
+                return None
+            found = [{"x": self.EDITOR[0], "y": self.EDITOR[1], "text": self.editor}] if self.open else []
+            return found if expr == W.EDITORS_JS else len(found)
+        if expr == SEL.VISIBLE_COMPOSER_BUTTONS_JS:
+            if not self.open:
+                return []
+            return [{"slot": "cancel-button", "name": "Cancel", "x": self.CANCEL[0], "y": self.CANCEL[1],
+                     "disabled": False},
+                    {"slot": "submit-button", "name": "Comment", "x": self.SUBMIT[0], "y": self.SUBMIT[1],
+                     "disabled": False}]
+        for remove in (False, True):
+            if expr == SEL.SAVED_DRAFTS_JS % (json.dumps(self.KEY[0]), json.dumps(self.KEY[1]), json.dumps(remove)):
+                text = self.saved.pop(self.KEY, None) if remove else self.saved.get(self.KEY)
+                return {"matched": 1 if text is not None else 0, "chars": len(text or "")}
+        raise AssertionError("the page model does not answer: %s" % expr[:120])
+
+    def click(self, x, y):
+        if (x, y) == self.TRIGGER and not self.open:
+            self.open = True
+            self.editor = self.saved.get(self.KEY, "")
+            self.opened_with.append(self.editor)
+        elif (x, y) == self.CANCEL and self.open:
+            self.open, self.editor = False, ""
+        elif (x, y) == self.EDITOR and self.open:
+            pass
+        else:
+            raise AssertionError("a click on nothing at %r" % ((x, y),))
+
+    def _edited(self):
+        self.saved[self.KEY] = self.last_typed = self.editor
+
+    def insert_text(self, text):
+        if not self.open:
+            raise AssertionError("typed with no box open")
+        self.inserts.append((self.editor, text))
+        self.editor += text
+        self._edited()
+
+    def key(self, key, modifiers=0):
+        if key != "Enter" or not self.open:
+            raise AssertionError("unexpected key %r" % key)
+        self.editor += "\n\n"
+        self._edited()
+
+    def select_all_and_delete(self):
+        if not self.stuck:
+            self.editor = ""
+
+    def screenshot(self, path):
+        if self.unreadable_after_shot:
+            self.unreadable = True
+        return path
+
+    def ax(self, *a, **k):
+        raise AssertionError("a thread comment never looks up controls by name")
+
+
+class TheCommentBox(FlowCase):
+
+    def setUp(self):
+        FlowCase.setUp(self)
+        self.logs = []
+        for patcher in (mock.patch("time.sleep"), mock.patch.object(W, "log", side_effect=self.logs.append)):
+            patcher.start()
+            self.addCleanup(patcher.stop)
+
+    def comment(self, page):
+        return self.run_flow(W.CommentSurface(page, Page.URL, reply=False))
+
+    def staged(self):
+        return [line for line in self.out if line.startswith("RESULT staged")]
+
+    # -- a box that opens pre-filled
+
+    def test_a_box_that_opens_holding_earlier_text_is_emptied_before_a_character_is_typed(self):
+        page = Page(saved={Page.KEY: "An earlier comment that was never sent."})
+        self.assertEqual(self.comment(page), "staged")
+        self.assertEqual(page.opened_with[0], "An earlier comment that was never sent.", "the case did not happen")
+        self.assertTrue(page.inserts, "nothing was typed")
+        self.assertEqual(page.inserts[0][0], "", "the draft was typed into the earlier text")
+        self.assertEqual(len(self.staged()), 1)
+
+    def test_a_box_that_opens_pre_filled_and_cannot_be_emptied_fails_with_nothing_typed(self):
+        page = Page(saved={Page.KEY: "An earlier comment that was never sent."}, stuck=True)
+        with self.assertRaises(Fail) as ctx:
+            self.comment(page)
+        self.assertIn("nothing was typed", str(ctx.exception))
+        self.assertEqual(page.opened_with, ["An earlier comment that was never sent."])
+        self.assertEqual(page.inserts, [])
+        self.assertEqual(self.staged(), [])
+
+    # -- a discard whose saved text would come back
+
+    def test_emptying_the_editor_alone_leaves_text_the_box_puts_back(self):
+        """The control for the test below: in this model, as on Reddit, select-all
+        and delete and Cancel leave the saved copy, and the box refills."""
+        page = Page()
+        s = W.CommentSurface(page, Page.URL, reply=False)
+        s.open_composer()
+        text, paras = W.prepare(DRAFT)
+        s.type(text, paras, None)
+        page.click(*Page.EDITOR)
+        page.select_all_and_delete()
+        page.click(*Page.CANCEL)
+        page.goto(Page.URL)
+        page.click(*Page.TRIGGER)
+        self.assertEqual(page.editor, text)
+
+    def test_a_discard_removes_the_saved_copy_and_the_next_run_opens_an_empty_box(self):
+        page = Page()
+        self.assertEqual(self.comment(page), "staged")
+        self.assertNotIn(Page.KEY, page.saved)
+        self.assertEqual(self.comment(page), "staged")
+        # run 1 opens the box, reopens it on a reload to prove it; run 2 the same
+        self.assertEqual(page.opened_with, ["", "", "", ""])
+        self.assertEqual(page.loads, 4)
+        self.assertEqual([into for into, _ in page.inserts if into == ""], [""] * 2, page.inserts)
+        self.assertEqual(len(self.staged()), 2)
+        self.assertNotIn(Page.KEY, page.saved)
+
+    def test_a_box_that_reopens_holding_text_after_the_discard_fails_instead_of_staging(self):
+        page = Page(restores_on_load=True)
+        with self.assertRaises(Fail) as ctx:
+            self.comment(page)
+        self.assertIn("reopened holding", str(ctx.exception))
+        self.assertEqual(len(page.opened_with), 2, "the box was not reopened to prove it empty")
+        self.assertEqual(self.staged(), [])
+
+    # -- an editor that cannot be read
+
+    def test_an_editor_that_cannot_be_read_is_not_an_empty_one(self):
+        page = Page()
+        s = W.CommentSurface(page, Page.URL, reply=False)
+        s.open_composer()
+        text, paras = W.prepare(DRAFT)
+        s.type(text, paras, None)
+        page.unreadable = True
+        with self.assertRaises(Fail) as ctx:
+            s.clear()
+        self.assertIn("could not read the comment editor", str(ctx.exception))
+        with self.assertRaises(Fail):
+            s.cancel()
+        self.assertTrue(page.open, "the box was treated as closed")
+        self.assertEqual(page.saved.get(Page.KEY), text, "the saved copy was treated as gone")
+        self.assertEqual(page.loads, 0)
+
+    def test_a_dry_run_whose_editor_turns_unreadable_fails_instead_of_staging(self):
+        page = Page(unreadable_after_shot=True)
+        with self.assertRaises(Fail):
+            self.comment(page)
+        self.assertEqual(self.staged(), [])
+        self.assertEqual(page.saved.get(Page.KEY), DRAFT)
+
+    def test_a_run_that_never_asked_for_the_box_has_nothing_to_discard(self):
+        page = Page()
+        s = W.CommentSurface(page, Page.URL, reply=False)
+        s.clear()
+        s.cancel()
+        self.assertEqual((page.editor_reads, page.loads), (0, 0))
 
 
 if __name__ == "__main__":

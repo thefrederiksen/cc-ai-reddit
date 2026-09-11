@@ -35,7 +35,7 @@ opt-out for other uses of a public tool.
 | No links | Refuses any URL, markdown link, email address or bare domain (`example.com`) in the text. `--allow-links` lifts this; even then, a text that is little more than a link is refused. |
 | No vote requests | Refuses text that asks for upvotes. |
 | One account | Before the first real submission, the owner pins the one account the machine may write as (`account --pin`). A browser signed in as any other account is refused, and the pin cannot be moved by the tool. |
-| Dry run by default | Without `--submit` the draft is staged, read back, screenshotted, printed, and then removed. Nothing is pressed and nothing is logged as sent. |
+| Dry run by default | Without `--submit` the draft is staged, read back, screenshotted, printed, and then removed, including the copy Reddit keeps of an unsent comment: the discard is proven by reloading the page and reopening the comment box empty. A box that opens holding earlier text is emptied before anything is typed. Nothing is pressed and nothing is logged as sent. |
 | A log of everything sent | An append-only local log with the time, subreddit, target, permalink and exact text of every submission. Rows are never rewritten. The pace and repetition guards are decided from it. |
 | Verified or it did not happen | After a real submission the tool reloads the page, finds the new comment or post by the signed-in author and the exact text, and checks it was not removed. An unverified send is logged and reported as a failure. |
 
