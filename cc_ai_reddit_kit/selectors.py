@@ -189,3 +189,54 @@ TITLE_BOX = re.compile(r"^Title$")
 BODY_BOX = re.compile(r"^Post body text field$")
 FLAIR_BUTTON = re.compile(r"^Add flair and tags( \*)?$")
 POST_BUTTON = re.compile(r"^Post$")
+
+# -- the inbox ----------------------------------------------------- 2026-09-11
+# Everything is read with fetch() from inside a www.reddit.com page, so the
+# session's cookies go with it and none of Reddit's page scripts run. The page
+# itself is the home page, which marks nothing.
+#
+# WHAT OPENING CHANGES, measured 2026-09-11 on one signed-in account with 337
+# unread in the message inbox (Reddit's own count, inbox_count on /api/me.json):
+#   unchanged  /message/inbox.json?mark=false, read repeatedly: the count and
+#              every item's `new` flag stayed as they were
+#   unchanged  the notifications list partial below, fetched: byte-identical on
+#              a second fetch, count and badge unchanged
+#   unchanged  /message/inbox/ fetched as HTML (its scripts do not run)
+#   SEEN       /notifications OPENED in a tab: its mark-all-notifications-seen
+#              element calls UpdateInboxActivitySeenState, which clears the
+#              bell's badge. Items stayed unread: a notification is marked read
+#              when it is clicked.
+#   READ       /message/inbox/ OPENED in a tab: the count fell from 337 to 300.
+#              Opening that page marks messages read. The tool never opens it.
+#   OPENS ONE  /chat/ OPENED in a tab with focus: the chat app went straight to
+#              the newest conversation (/chat/room/...) by itself. Without
+#              focus its room list never loaded in 45 seconds. The tool never
+#              opens chat.
+URL_HOME = "https://www.reddit.com/"
+FETCH_TEXT_JS = ("fetch(%s, {credentials: 'include'})"
+                 ".then(r => r.text().then(t => ({status: r.status, url: r.url, text: t})))")
+INBOX_COUNT_JS = ("fetch('/api/me.json', {credentials: 'include'}).then(r => r.ok ? r.json() : null)"
+                  ".then(j => j && j.data ? j.data.inbox_count : null)")
+# The message inbox: comment replies, post replies, username mentions and
+# private messages, newest first, as a Listing of t1 and t4 things. `new` is
+# Reddit's unread flag; `type` names the kind of a t1 (comment_reply,
+# post_reply, username_mention). mark=false is what keeps a read from marking.
+# Called with (page size at most 100, "&after=<fullname>" or "").
+INBOX_JSON = "/message/inbox.json?mark=false&limit=%d&raw_json=1%s"
+# The list the bell opens, as server-rendered HTML. Inside the element with
+# data-id="notification-container-element": one notification-item per
+# notification (message-type COMMENT_REPLY and others, the thing's id as
+# comment-id on its notification-context-menu) and one
+# notification-announcement per message from Reddit (author-name on its
+# announcement-overflow-menu). Each holds an rpl-inbox-row that carries
+# `selected` while unread - Reddit's own script removes it on click and reads
+# it as the unread state. is-viewed and viewed_at only mean scrolled into view.
+# Title: [data-testid="title"]; text: [data-testid="body"] without its
+# [data-testid="sent-at"]; time: faceplate-timeago ts.
+NOTIFICATIONS_PARTIAL = "/svc/shreddit/notifications-inbox-content/20/route"
+NOTIFICATIONS_CONTAINER = "notification-container-element"
+# The header's chat button, as a server-rendered partial: its unread count is
+# initial-count on dynamic-badge#header-action-item-chat-button-badge.
+CHAT_BUTTON_PARTIAL = "/svc/shreddit/header-action-item-chat"
+CHAT_BADGE_ID = "header-action-item-chat-button-badge"
+URL_CHAT = "https://www.reddit.com/chat/"

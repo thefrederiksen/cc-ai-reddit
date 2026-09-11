@@ -1,6 +1,6 @@
 ---
 name: reddit-browser
-description: Read Reddit and stage or send comments, replies and text posts through a signed-in browser with cc-ai-reddit - scan a subreddit, read a thread, read rules, find unanswered replies, score a draft post. The tool enforces subreddit rules, human pace, duplicate, link and account guardrails and dry-runs every write unless --submit. Documents the traps (JS challenge, shreddit-* elements, lazy loading, rich text composer). Triggers on "reddit", "scan a subreddit", "read a reddit thread", "subreddit rules", "comment on reddit", "reply on reddit", "post to reddit", "unanswered reddit replies", "score a reddit post".
+description: Read Reddit and stage or send comments, replies and text posts through a signed-in browser with cc-ai-reddit - scan a subreddit, read a thread, read rules, find unanswered replies, read the account's inbox and notifications without marking them read, score a draft post. The tool enforces subreddit rules, human pace, duplicate, link and account guardrails and dry-runs every write unless --submit. Documents the traps (JS challenge, shreddit-* elements, lazy loading, rich text composer, pages that mark messages read). Triggers on "reddit", "scan a subreddit", "read a reddit thread", "subreddit rules", "comment on reddit", "reply on reddit", "post to reddit", "unanswered reddit replies", "reddit inbox", "reddit notifications", "reddit messages", "did anyone reply on reddit", "score a reddit post".
 ---
 
 # Reddit through cc-ai-reddit
@@ -37,6 +37,7 @@ in a loop, not by passing `--allow-links`, not by switching profiles.
 | One thread, every comment | `thread <permalink> --archive` | archive |
 | A subreddit's current rules | `rules <sub>` | browser |
 | A user's history and who is waiting on them | `me <username> [--days N]` | archive |
+| Everything waiting for the signed-in account | `inbox [--limit N] [--json]` | browser, marks nothing read |
 | A screenshot | `shot [url] [--out file.png]` | browser |
 
 The archive is Arctic Shift, a free public service. It is cached and spaced by
@@ -56,6 +57,23 @@ drafting anything for it.
 `thread` (live) reports `comments_held` against `comments_stated`. If they
 differ, the page did not render everything; say so rather than treating the
 held comments as the whole thread.
+
+## The inbox: read it with the tool, never by opening Reddit's pages
+
+`inbox` lists comment replies, post replies, username mentions, private
+messages and notifications for the signed-in account, each with `unread` and
+`unread_in`, plus one `chat` row when the chat button shows unread. It is
+account-bound: signed out or not the pinned account is a FAIL. `RESULT inbox
+... marks_read=no` is the whole point: it reads with `mark=false` and without
+running Reddit's page scripts, so what was unread stays unread for the owner.
+
+`me` (archive) and `inbox` (live) answer different questions: `me` is who is
+waiting on the account's recent comments; `inbox` is what Reddit delivered,
+including mentions, messages and notices from Reddit. Use `inbox` to see
+what arrived, then `thread` on a row's permalink to read the conversation.
+
+It does not list chat. If the `chat` row is there, tell the owner to read chat
+by hand; do not open it.
 
 ## Writing: stage, read, then decide
 
@@ -149,6 +167,24 @@ All measured on www.reddit.com, 2026-09-10.
   session. Rules are read from the community sidebar (`<details>` in
   `aside[aria-label="Community information"]`); read `textContent`, since a
   collapsed rule hides its description from `innerText`.
+- **Opening the message inbox marks it read.** Measured 2026-09-11: opening
+  `/message/inbox/` in a tab dropped the account's unread count from 337 to
+  300. `/message/inbox.json?mark=false`, and the page's HTML fetched without
+  running its scripts, change nothing. Never navigate to `/message/...`.
+- **Opening `/notifications` clears the bell badge.** The page's
+  `mark-all-notifications-seen` element tells Reddit everything was seen.
+  Items stay unread until clicked; the unread marker is `selected` on each
+  row's `rpl-inbox-row` (`is-viewed` and `viewed_at` only mean scrolled into
+  view). The tool fetches the list's partial,
+  `/svc/shreddit/notifications-inbox-content/20/route`, instead.
+- **Opening chat opens a conversation.** In a focused tab `/chat/` went to the
+  newest conversation by itself; in a hidden tab its room list never loaded.
+  The chat button's count is server-rendered in
+  `/svc/shreddit/header-action-item-chat` (`initial-count`). Chat requests are
+  a "Requests" entry inside chat, which the tool cannot read without opening it.
+- **The message inbox and the notifications keep separate read states.** The
+  same reply read in one place was still unread in the other. `unread_in`
+  says which.
 - **Some subreddits require a flair.** The flair control's name ends in ` *`;
   `post` then needs `--flair` with an exact option name, and lists them if not.
 

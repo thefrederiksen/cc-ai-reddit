@@ -43,6 +43,10 @@ opt-out for other uses of a public tool.
 
 - It does not vote, and has no command that could.
 - It does not send direct messages or chat.
+- It does not mark anything read, and it never opens the pages that do: the
+  message inbox page, a notification, or chat (see `inbox` below).
+- It does not list chat. `inbox` reports the chat button's unread count only,
+  because opening chat opens a conversation.
 - It does not create, switch or sign in to accounts, and it never types a password.
 - It does not launch a browser. The browser must already be running and signed in.
 - It does not post links, images, video or polls. Text posts only.
@@ -78,6 +82,7 @@ cc-ai-reddit scan <sub> [--new|--hot] [--limit N] [--max-age-hours N] [--live] [
 cc-ai-reddit thread <permalink> [--archive] [--json]
 cc-ai-reddit rules <sub> [--json]
 cc-ai-reddit me <username> [--days N] [--limit N] [--json]
+cc-ai-reddit inbox [--limit N] [--json]
 cc-ai-reddit shot [url] [--out file.png]
 cc-ai-reddit score <draft.md> --sub <sub> [--title T] [--flair F] [--author-posts N] [--when "YYYY-MM-DD HH:MM"]
 
@@ -96,6 +101,8 @@ cc-ai-reddit account [--pin]
 - `rules` prints a subreddit's rules as the live page shows them.
 - `me` lists a user's recent posts and comments from the archive, and every
   reply to them that the user has not answered.
+- `inbox` lists what is waiting for the signed-in account, newest first, and
+  marks nothing read: see [inbox](#inbox).
 - `shot` screenshots a page, or the one Reddit tab already open.
 - `comment`, `reply`, `post` stage by default. Drafts are plain text: the
   composer is rich text and would post markdown characters literally, so
@@ -145,6 +152,49 @@ Measured on 2026-09-10, and why the tool is shaped this way:
 - Reddit answers anonymous HTTP with 403, and its registered API requires
   manual approval, which is why the live layer is a browser.
 
+## inbox
+
+`inbox` shows everything on Reddit waiting for the signed-in account, one row
+per item: `kind` (`comment_reply`, `post_reply`, `username_mention`,
+`private_message`, `chat`, or `other` with Reddit's own `label`), `author`,
+`subreddit`, `created`, `title`, `text`, `permalink`, and `unread` with
+`unread_in` naming where Reddit shows it unread. It reads three things, each
+fetched from inside a www.reddit.com page so that none of Reddit's page
+scripts runs:
+
+| Source | What it holds |
+|---|---|
+| The message inbox, `/message/inbox.json?mark=false` | comment replies, post replies, username mentions, private messages, with Reddit's unread flag |
+| The notifications list the bell opens | replies, messages from Reddit (`other`, label `announcement`) and anything else Reddit notifies about. A reply found in both places is one row. |
+| The chat button | its unread count, as one `chat` row when it is above zero |
+
+It is account-bound like a write: signed out, no pinned account, or a browser
+signed in as anyone but the pinned account is a FAIL before anything is read.
+Zero rows are reported only when the inbox answered an empty listing, the
+notifications list rendered with nothing in it, and the chat button rendered
+a count of 0; a sign-in page, a challenge or a changed page is a FAIL naming
+the source. `RESULT inbox ... reddit_unread_count=N` is Reddit's own unread
+count for the account.
+
+**What reading changes.** Measured on 2026-09-11 on one signed-in account,
+with Reddit's unread count (`inbox_count` on `/api/me.json`) and every item's
+unread marker read before and after each step:
+
+| Step | Effect |
+|---|---|
+| `/message/inbox.json?mark=false`, read repeatedly | none |
+| the notifications list, fetched twice | none; the two answers were identical |
+| `/message/inbox/` fetched as HTML, scripts not run | none |
+| `/notifications` **opened** in a tab | the page tells Reddit the notifications were seen (it clears the bell's badge). No item was marked read: Reddit marks a notification read when it is clicked. |
+| `/message/inbox/` **opened** in a tab | **marked 37 items read** (the unread count fell from 337 to 300) |
+| `/chat/` **opened** in a tab with focus | the chat app opened the newest conversation by itself |
+
+So the command reads only the first three, and opens none of the last three.
+It does not list chat: the only way it found to list chat is to open it, and
+opening chat opens a conversation. Whether Reddit counts a pending chat
+request on the chat button was not observed, because the account had none;
+read chat by hand.
+
 ## score
 
 `score` predicts a draft post's score from what is known at posting time:
@@ -192,7 +242,10 @@ py -3.11 -m unittest discover -s tests
 
 No browser and no network. They cover every guardrail refusing (rules not
 read, each pace limit, near duplicates, links, vote requests, the account
-pin), that a run without `--submit` presses nothing and logs nothing, and
+pin), that a run without `--submit` presses nothing and logs nothing, that
+`inbox` reads every kind, reports an empty inbox only when every source
+rendered, fails on an unrendered page or the wrong account, and opens no page
+but the home page, and
 that the repository itself carries no account ids, usernames, home paths or
 email addresses. Dated live evidence is in `docs/evidence/`; the screenshots
 beside it stay on the machine that took them.
