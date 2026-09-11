@@ -6,6 +6,7 @@ READ
   thread <permalink> [--archive] [--json]
   rules <sub> [--json]
   me <username> [--days N] [--limit N] [--json]
+  inbox [--limit N] [--json]
   shot [url] [--out PNG]
   score <draft.md> --sub <sub> [--title T] [--flair F] [--author-posts N] [--when "YYYY-MM-DD HH:MM"]
 
@@ -131,6 +132,33 @@ def cmd_me(a):
            sum(1 for i in items if i["kind"] == "comment"), threads, waiting))
 
 
+def cmd_inbox(a):
+    from cc_ai_reddit_kit import inbox as I
+    with _browser(a) as b:
+        got = I.read(b, a.limit)
+    for r in got["rows"]:
+        if a.json:
+            as_json(r)
+            continue
+        kind = r["kind"] if r["kind"] != "other" else "other/%s" % r["label"]
+        say("%-6s %-22s %-24s %-20s %s" % ("UNREAD" if r["unread"] else "read", kind,
+                                           "r/" + r["subreddit"] if r["subreddit"] else "-", r["created"] or "-",
+                                           "u/" + r["author"] if r["author"] else "-"))
+        for line in (r["title"], r["text"]):
+            if line:
+                say("       " + line.replace("\n", " ")[:300])
+        if r["permalink"]:
+            say("       " + r["permalink"])
+    if not got["rows"]:
+        log("the message inbox and the notifications list both rendered and both are empty; the chat button "
+            "shows 0 unread")
+    log("read with mark=false and without running Reddit's page scripts: nothing was marked read")
+    say("RESULT inbox account=%s shown=%d unread_shown=%d held=%d inbox=%d notifications=%d chat_unread=%d "
+        "reddit_unread_count=%d marks_read=no"
+        % (got["account"]["id"], len(got["rows"]), sum(1 for r in got["rows"] if r["unread"]), got["held"],
+           got["inbox"], got["notifications"], got["chat_unread"], got["reddit_unread_count"]))
+
+
 def cmd_shot(a):
     out = a.out or os.path.join(sub_dir("shots"), "shot-%s.png" % time.strftime("%Y%m%d-%H%M%S"))
     with _browser(a) as b:
@@ -230,6 +258,13 @@ def main():
     sp.add_argument("--limit", type=int, default=100)
     sp.add_argument("--json", action="store_true")
     sp.set_defaults(fn=cmd_me)
+
+    sp = sub.add_parser("inbox", help="replies, mentions, messages and notifications waiting for the signed-in "
+                                      "account. Marks nothing read.")
+    sp.add_argument("--limit", type=int, default=25)
+    sp.add_argument("--json", action="store_true")
+    browser_args(sp)
+    sp.set_defaults(fn=cmd_inbox)
 
     sp = sub.add_parser("shot", help="screenshot a Reddit page (or the one Reddit tab already open)")
     sp.add_argument("url", nargs="?")
