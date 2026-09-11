@@ -151,6 +151,35 @@ VISIBLE_COMPOSER_BUTTONS_JS = r"""[...document.querySelectorAll('shreddit-compos
   .filter(b => b.getBoundingClientRect().height > 0 && /^(submit|cancel)-button$/.test(b.getAttribute('slot') || ''))
   .map(b => { const r = b.getBoundingClientRect(); return {slot: b.getAttribute('slot'), name: b.innerText.trim(), x: Math.round(r.x + r.width / 2), y: Math.round(r.y + r.height / 2), disabled: b.disabled}; })"""
 
+# -- unsent comments Reddit keeps ----------------------------------- 2026-09-10
+# Reddit saves every edit in a comment box in the browser and puts the text
+# back when the same box opens again - after a reload, after the editor was
+# emptied and closed. Measured in Reddit's own script and in a signed-in
+# browser: localStorage key "comment-draft-items-<the viewer's user-id>", a JSON
+# list (at most 20, dropped after 14 days) of {id, postId: t3_..,
+# parentCommentId: t1_.. on replies only, content: the rich text document,
+# mode, lastUpdatedTime, ...}. The box on a thread restores the entry with its
+# postId and no parentCommentId; a Reply box the entry matching both. Emptying
+# the editor leaves the entry in place: Reddit removes it only by its own id.
+# Called with (post fullname, parent comment fullname or null, remove) as JSON.
+SAVED_DRAFTS_JS = r"""(() => {
+  const v = document.querySelector('[user-id]');
+  const viewer = v ? v.getAttribute('user-id') : '';
+  if (!viewer) return {error: 'no element on the page names the signed-in viewer'};
+  const key = 'comment-draft-items-' + viewer;
+  const raw = localStorage.getItem(key);
+  let items = [];
+  if (raw !== null) {
+    try { items = JSON.parse(raw); } catch (e) { return {error: 'the saved drafts do not parse'}; }
+    if (!Array.isArray(items)) return {error: 'the saved drafts are not a list'};
+  }
+  const post = %s, parent = %s, remove = %s;
+  const mine = d => !!d && d.postId === post && (parent ? d.parentCommentId === parent : !d.parentCommentId);
+  const matched = items.filter(mine);
+  if (remove && matched.length) localStorage.setItem(key, JSON.stringify(items.filter(d => !mine(d))));
+  return {matched: matched.length, chars: matched.reduce((n, d) => n + String(d.content || '').length, 0)};
+})()"""
+
 # -- the post composer --------------------------------------------- 2026-09-10
 # /r/<sub>/submit/?type=TEXT, the r-post-composer-form. Accessible names:
 # textbox "Title", textbox "Post body text field", button "Add flair and tags"

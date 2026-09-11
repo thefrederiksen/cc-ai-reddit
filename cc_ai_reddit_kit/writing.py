@@ -102,8 +102,10 @@ def run(kind, surface, raw_text, title, submit, allow_links, shot, ledger, out=p
             out("  %s" % ("| " + line if line else "|"))
 
         if not submit:
-            _discard(surface)
+            # One discard, and its FAIL is this run's result: a discard that
+            # could not prove the box empty is not tried again in `finally`.
             staged = False
+            _discard(surface)
             pin = G.pinned_account(ledger.root)
             out("RESULT staged kind=%s sub=%s target=%s account=%s pinned=%s chars=%d shot=%s"
                 % (kind, sub, target["permalink"], me["id"],
@@ -148,6 +150,10 @@ EDITORS_JS = ("[...document.querySelectorAll('shreddit-composer [contenteditable
 
 class CommentSurface(object):
 
+    # Set when this run asks for the composer. Only this says a box was never
+    # opened; an empty or failed read of the page does not.
+    opened = False
+
     def __init__(self, b, url, reply):
         self.b = b
         self.reply = reply
@@ -184,13 +190,35 @@ class CommentSurface(object):
     def account(self):
         return self.b.me()
 
-    def _editor(self):
+    def _editors(self):
+        """Every visible comment editor. Anything but a list is a read that did
+        not happen, and an editor that could not be read may still hold text."""
         found = self.b.js(EDITORS_JS)
+        if not isinstance(found, list):
+            raise Fail("could not read the comment editor on %s (the page answered %r). It may still hold "
+                       "text; look at the tab before any other write to this thread." % (self.url, found))
+        return found
+
+    def _editor(self):
+        found = self._editors()
         if len(found) != 1:
             raise Fail("expected exactly one open comment editor, found %d" % len(found))
         return found[0]
 
+    def _saved(self, remove=False):
+        """{matched, chars}: the unsent comment Reddit keeps in this browser for
+        this box (see SAVED_DRAFTS_JS), removed first when `remove`."""
+        parent = "t1_" + self.comment_id if self.reply else None
+        got = self.b.js(SEL.SAVED_DRAFTS_JS % (json.dumps("t3_" + self.post_id), json.dumps(parent),
+                                               json.dumps(remove)))
+        if not isinstance(got, dict) or "matched" not in got:
+            raise Fail("could not read the unsent comments Reddit keeps in this browser (%s), so the comment box "
+                       "on %s is not proven empty" % (got.get("error") if isinstance(got, dict) else repr(got),
+                                                     self.url))
+        return got
+
     def open_composer(self):
+        self.opened = True              # from here on a click may have opened a box that holds text
         with self.b.focused():
             if self.reply:
                 rng_js = ("(() => { const c = document.querySelector('shreddit-comment[thingid=\"t1_%s\"]'); "
@@ -208,12 +236,24 @@ class CommentSurface(object):
                 r = self.b.scroll_to(TRIGGER_RECT_JS, "the comment box")
                 self.b.click(r["x"], r["y"])
             self.b.wait_for(EDITORS_JS + ".length", "the opened comment editor", timeout=10)
+        time.sleep(1.0)                 # the box fills in any saved text just after it appears
 
     def type(self, text, paras, title):
         with self.b.focused():
             ed = self._editor()
             self.b.click(ed["x"], ed["y"])
             time.sleep(0.4)
+            held = _norm(self._editor()["text"])
+            if held:
+                # Reddit put back an unsent comment (SAVED_DRAFTS_JS). Typing
+                # now would put the draft inside it.
+                log("the comment box opened holding %d characters of an earlier unsent comment; emptying it "
+                    "before typing" % len(held))
+                self.b.select_all_and_delete()
+                time.sleep(0.6)
+                if _norm(self._editor()["text"]):
+                    raise Fail("the comment box opened holding earlier text and it could not be emptied, so "
+                               "nothing was typed. Look at the tab.")
             for i, p in enumerate(paras):
                 if i:
                     self.b.key("Enter")
@@ -229,18 +269,52 @@ class CommentSurface(object):
         return ([x for x in found if x["slot"] == "submit-button"], [x for x in found if x["slot"] == "cancel-button"])
 
     def clear(self):
-        if not self.b.js(EDITORS_JS + ".length"):
-            return                      # no editor was ever opened: nothing holds text
+        """Empty the open editor and prove it empty. A closed box has nothing in
+        its editor; what Reddit saved of it is removed, and proven gone, by
+        cancel()."""
+        if not self.opened:
+            return
         with self.b.focused():
-            ed = self._editor()
-            self.b.click(ed["x"], ed["y"])
+            found = self._editors()
+            if not found:
+                return
+            if len(found) != 1:
+                raise Fail("expected exactly one open comment editor, found %d" % len(found))
+            self.b.click(found[0]["x"], found[0]["y"])
             self.b.select_all_and_delete()
             time.sleep(0.6)
             if _norm(self._editor()["text"]):
                 raise Fail("the comment editor still holds text after clearing it")
 
     def cancel(self):
-        if not self.b.js(EDITORS_JS + ".length"):
+        """Close the box, remove the copy Reddit keeps of the unsent text, and
+        prove it gone the way the next run would meet it: reload the page,
+        reopen the box, read it empty, close it."""
+        if not self.opened:
+            return
+        self._close()
+        time.sleep(1.0)                 # a save the page still had pending lands before the copy is removed
+        removed = self._saved(remove=True)
+        if removed["matched"]:
+            log("removed the unsent comment Reddit kept for this box (%d characters saved)" % removed["chars"])
+        if self._saved()["matched"]:
+            raise Fail("the unsent comment Reddit keeps for the box on %s is still in the browser after "
+                       "removing it. Empty that box by hand before any other write to it." % self.url)
+        self.b.goto(self.url)
+        self.b.wait_for(SEL.THREAD_JS, "the post on %s" % self.url)
+        self.open_composer()
+        held = _norm(self._editor()["text"])
+        if held:
+            raise Fail("the comment box on %s reopened holding %d characters after the discard, so Reddit "
+                       "still has the unsent text. Empty that box by hand before any other write to it."
+                       % (self.url, len(held)))
+        self._close()
+        if self._saved()["matched"]:
+            raise Fail("reopening the empty comment box on %s saved an unsent comment for it again" % self.url)
+        log("reopened the comment box on a reloaded page: it is empty")
+
+    def _close(self):
+        if not self._editors():
             return
         with self.b.focused():
             _, cancel = self._buttons()
@@ -248,7 +322,7 @@ class CommentSurface(object):
                 raise Fail("expected one Cancel control on the open composer, found %d" % len(cancel))
             self.b.click(cancel[0]["x"], cancel[0]["y"])
             deadline = time.time() + 6
-            while self.b.js(EDITORS_JS + ".length"):
+            while self._editors():
                 if time.time() > deadline:
                     raise Fail("the composer did not close after Cancel")
                 time.sleep(0.5)
