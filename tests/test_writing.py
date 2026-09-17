@@ -245,8 +245,16 @@ class Page(object):
     CANCEL = (400, 420)
     SUBMIT = (480, 420)
 
-    def __init__(self, saved=None, stuck=False, restores_on_load=False, unreadable_after_shot=False):
+    HEIGHT = 959
+
+    def __init__(self, saved=None, stuck=False, restores_on_load=False, unreadable_after_shot=False,
+                 opens_below=False):
         self.saved = dict(saved or {})
+        # MEASURED 2026-09-17 (#7): a box can open with its editor below the
+        # viewport; a click there focuses nothing until it is scrolled into view
+        self.opens_below = opens_below
+        self.in_view = True
+        self.focused_editor = False
         self.stuck = stuck                          # select-all and delete leaves the text in place
         self.restores_on_load = restores_on_load    # something outside this page writes the text back on load
         self.unreadable_after_shot = unreadable_after_shot
@@ -283,6 +291,8 @@ class Page(object):
         return value
 
     def scroll_to(self, expr, what):
+        if expr == W.EDITOR_RECT_JS and self.open:
+            self.in_view = True
         return self.js(expr)
 
     def js(self, expr):
@@ -291,13 +301,18 @@ class Page(object):
                              "archived": False}, "comments": []}
         if expr == SEL.RULES_JS:
             return RULES
+        if expr == "innerHeight":
+            return self.HEIGHT
+        if expr == W.EDITOR_RECT_JS:
+            return {"y": self.EDITOR[1] - 100, "h": 200} if self.open else None
         if expr == W.TRIGGER_RECT_JS:
             return {"x": self.TRIGGER[0], "y": self.TRIGGER[1], "h": 40}
         if expr in (W.EDITORS_JS, W.EDITORS_JS + ".length"):
             self.editor_reads += 1
             if self.unreadable:
                 return None
-            found = [{"x": self.EDITOR[0], "y": self.EDITOR[1], "text": self.editor}] if self.open else []
+            y = self.EDITOR[1] if self.in_view else self.HEIGHT + 120
+            found = [{"x": self.EDITOR[0], "y": y, "text": self.editor}] if self.open else []
             return found if expr == W.EDITORS_JS else len(found)
         if expr == SEL.VISIBLE_COMPOSER_BUTTONS_JS:
             if not self.open:
@@ -315,12 +330,16 @@ class Page(object):
     def click(self, x, y):
         if (x, y) == self.TRIGGER and not self.open:
             self.open = True
+            self.in_view = not self.opens_below
+            self.focused_editor = True          # opening a box focuses its editor
             self.editor = self.saved.get(self.KEY, "")
             self.opened_with.append(self.editor)
         elif (x, y) == self.CANCEL and self.open:
-            self.open, self.editor = False, ""
+            self.open, self.editor, self.focused_editor = False, "", False
         elif (x, y) == self.EDITOR and self.open:
-            pass
+            self.focused_editor = True
+        elif (x, y) == (self.EDITOR[0], self.HEIGHT + 120) and self.open:
+            self.focused_editor = False         # a click below the viewport lands on nothing
         else:
             raise AssertionError("a click on nothing at %r" % ((x, y),))
 
@@ -341,7 +360,7 @@ class Page(object):
         self._edited()
 
     def select_all_and_delete(self):
-        if not self.stuck:
+        if not self.stuck and self.focused_editor:
             self.editor = ""
 
     def screenshot(self, path):
@@ -424,6 +443,35 @@ class TheCommentBox(FlowCase):
         self.assertEqual(len(page.opened_with), 2, "the box was not reopened to prove it empty")
         self.assertEqual(self.staged(), [])
 
+    # -- a box that opens below the viewport (#7)
+
+    def test_the_model_reproduces_a_click_below_the_viewport_emptying_nothing(self):
+        """The control for the test below: clicked where it opened, below the
+        viewport, the editor is not focused and select-all and delete leave the
+        draft in place, as the tool did on 2026-09-16 and 2026-09-17."""
+        page = Page(opens_below=True)
+        page.click(*Page.TRIGGER)
+        page.insert_text("a draft")
+        page.click(Page.EDITOR[0], Page.HEIGHT + 120)
+        page.select_all_and_delete()
+        self.assertEqual(page.editor, "a draft")
+
+    def test_a_box_that_opens_below_the_viewport_is_scrolled_into_view_and_discarded(self):
+        page = Page(opens_below=True)
+        self.assertEqual(self.comment(page), "staged")
+        self.assertEqual(len(self.staged()), 1)
+        self.assertNotIn(Page.KEY, page.saved)
+        self.assertEqual(page.opened_with, ["", ""], "the discard was not proven on a reopened box")
+
+    def test_a_box_that_cannot_be_emptied_says_whether_reddit_kept_a_copy(self):
+        page = Page(stuck=True)
+        with self.assertRaises(Fail) as ctx:
+            self.comment(page)
+        self.assertIn("still holds text after clearing it", str(ctx.exception))
+        self.assertIn("Reddit keeps a saved copy of it in this browser (%d characters)" % len(W.prepare(DRAFT)[0]),
+                      str(ctx.exception))
+        self.assertEqual(self.staged(), [])
+
     # -- an editor that cannot be read
 
     def test_an_editor_that_cannot_be_read_is_not_an_empty_one(self):
@@ -455,6 +503,114 @@ class TheCommentBox(FlowCase):
         s.clear()
         s.cancel()
         self.assertEqual((page.editor_reads, page.loads), (0, 0))
+
+
+class ReplyPage(Page):
+    """The same page with one comment to reply to, scrolled like a window.
+
+    MEASURED 2026-09-17 (#5) on a live thread: a comment with no replies is
+    386px tall with its Reply control 21px above its bottom edge, on a 959px
+    viewport. The accessibility lookup only returns controls inside the
+    viewport."""
+
+    COMMENT_ID = "c0ment1"
+    URL = "https://www.reddit.com/r/SubA/comments/abc123/comment/c0ment1/"
+    KEY = ("t3_abc123", "t1_c0ment1")
+
+    def __init__(self, height=386, first_child_at=None, **kw):
+        Page.__init__(self, **kw)
+        self.height = height
+        self.first_child_at = first_child_at    # offset of the first reply inside the comment, or None
+        self.scroll = 0
+        self.doc_top = 1400                     # where the comment starts in the document
+
+    def _top(self):
+        return self.doc_top - self.scroll
+
+    def _bottom(self):
+        return self._top() + (self.first_child_at if self.first_child_at is not None else self.height)
+
+    def js(self, expr):
+        if expr == SEL.THREAD_JS:
+            return {"post": {"id": "abc123", "subreddit": "SubA", "title": "a thread", "locked": False,
+                             "archived": False},
+                    "comments": [{"id": self.COMMENT_ID, "author": "someone_else", "text": "a question"}]}
+        if "shreddit-comment[thingid=" in expr:
+            # answers the two scroll targets the tool has used, and no other
+            if "y: bottom - 60" in expr:
+                y = self._bottom() - 60         # the action row (since #5)
+            elif "y: r.y + 10" in expr:
+                y = self._top() + 10            # the comment's top (before #5)
+            else:
+                raise AssertionError("the reply model does not answer: %s" % expr[:160])
+            return {"y": y, "h": self.height, "top": self._top(), "bottom": self._bottom()}
+        return Page.js(self, expr)
+
+    def scroll_to(self, expr, what):
+        if expr != W.EDITOR_RECT_JS:
+            # as Browser.scroll_to does: 350px wheel steps until y is inside
+            # (150, innerHeight - 220), and no further
+            for _ in range(14):
+                y = self.js(expr)["y"]
+                if 150 < y < self.HEIGHT - 220:
+                    break
+                self.scroll += 350 if y >= self.HEIGHT - 220 else -350
+        return Page.scroll_to(self, expr, what)
+
+    def reply_button(self):
+        return (700, self._bottom() - 21)
+
+    def ax(self, name, roles=("button",)):
+        x, y = self.reply_button()
+        return [{"role": "button", "name": "Reply", "x": x, "y": y}] if 0 < y < self.HEIGHT else []
+
+    def click(self, x, y):
+        if (x, y) == self.reply_button() and not self.open:
+            return Page.click(self, *self.TRIGGER)
+        return Page.click(self, x, y)
+
+
+class TheReplyBox(FlowCase):
+
+    def setUp(self):
+        FlowCase.setUp(self)
+        self.logs = []
+        for patcher in (mock.patch("time.sleep"), mock.patch.object(W, "log", side_effect=self.logs.append)):
+            patcher.start()
+            self.addCleanup(patcher.stop)
+
+    def staged(self):
+        return [line for line in self.out if line.startswith("RESULT staged")]
+
+    def reply(self, page):
+        return self.run_flow(W.CommentSurface(page, page.URL, reply=True), kind="reply")
+
+    def test_a_long_comment_with_no_replies_has_its_reply_control_found(self):
+        page = ReplyPage(height=386)
+        self.assertEqual(self.reply(page), "staged")
+        self.assertEqual(len(self.staged()), 1)
+        self.assertTrue(page.inserts, "nothing was typed")
+
+    def test_a_comment_with_a_reply_under_it_still_has_its_control_found(self):
+        page = ReplyPage(height=900, first_child_at=240)
+        self.assertEqual(self.reply(page), "staged")
+
+    def test_the_control_is_below_the_viewport_when_only_the_top_is_scrolled_in(self):
+        """The control for the two above: scrolled the way the tool did before
+        #5, with the comment's top at 700, the Reply control sits below the
+        viewport and the lookup finds nothing."""
+        page = ReplyPage(height=386)
+        page.scroll = page.doc_top - 700
+        self.assertEqual(page.ax(SEL.REPLY_BUTTON), [])
+
+    def test_no_control_found_says_nothing_was_clicked_and_logs_no_discard(self):
+        page = ReplyPage(height=386)
+        page.ax = lambda *a, **k: []
+        with self.assertRaises(Fail) as ctx:
+            self.reply(page)
+        self.assertIn("nothing was clicked or typed", str(ctx.exception))
+        self.assertFalse([l for l in self.logs if "COULD NOT DISCARD" in l], self.logs)
+        self.assertEqual(page.inserts, [])
 
 
 if __name__ == "__main__":
