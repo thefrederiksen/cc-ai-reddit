@@ -147,6 +147,13 @@ EDITORS_JS = ("[...document.querySelectorAll('shreddit-composer [contenteditable
               ".filter(e => e.getBoundingClientRect().height > 0).map(e => { const r = e.getBoundingClientRect(); "
               "return {x: r.x + Math.min(40, r.width / 2), y: r.y + r.height / 2, text: e.innerText}; })")
 
+# The open editor's rectangle, for scroll_to. MEASURED 2026-09-17 (#7): a Reply
+# box opened near the bottom of the viewport ran below it, so the click that
+# focuses the editor landed off the page, select-all and delete emptied nothing,
+# and the discard failed with the draft still in the box.
+EDITOR_RECT_JS = ("(() => { const e = [...document.querySelectorAll('shreddit-composer [contenteditable=\"true\"]')]"
+                  ".filter(x => x.getBoundingClientRect().height > 0); if (e.length !== 1) return null; "
+                  "const r = e[0].getBoundingClientRect(); return {y: r.y, h: r.height}; })()")
 
 class CommentSurface(object):
 
@@ -205,6 +212,16 @@ class CommentSurface(object):
             raise Fail("expected exactly one open comment editor, found %d" % len(found))
         return found[0]
 
+    def _editor_in_view(self):
+        """The one open editor, scrolled so the point clicked to focus it is
+        on the screen. A click off the screen focuses nothing."""
+        self.b.scroll_to(EDITOR_RECT_JS, "the open comment editor")
+        ed = self._editor()
+        if not 0 < ed["y"] < self.b.js("innerHeight"):
+            raise Fail("the open comment editor could not be brought onto the screen (its centre is at y=%d)"
+                       % ed["y"])
+        return ed
+
     def _saved(self, remove=False):
         """{matched, chars}: the unsent comment Reddit keeps in this browser for
         this box (see SAVED_DRAFTS_JS), removed first when `remove`."""
@@ -218,29 +235,38 @@ class CommentSurface(object):
         return got
 
     def open_composer(self):
-        self.opened = True              # from here on a click may have opened a box that holds text
         with self.b.focused():
             if self.reply:
+                # MEASURED 2026-09-17 (#5): a comment's Reply control sits in its
+                # action row, just above its first reply, or at its own bottom
+                # edge when it has none. On a long comment with no replies
+                # (386px tall, Reply at 829 on a 959px viewport) scrolling its
+                # TOP into view left the control below the viewport, where the
+                # accessibility lookup does not see it. So the action row, the
+                # bottom of the range, is what is scrolled into view.
                 rng_js = ("(() => { const c = document.querySelector('shreddit-comment[thingid=\"t1_%s\"]'); "
                           "if (!c) return null; const r = c.getBoundingClientRect(); "
                           "const k = c.querySelector('shreddit-comment'); "
-                          "return {y: r.y + 10, h: r.height, top: r.y, bottom: k ? k.getBoundingClientRect().y "
-                          ": r.y + r.height}; })()" % self.comment_id)
+                          "const bottom = k ? k.getBoundingClientRect().y : r.y + r.height; "
+                          "return {y: bottom - 60, h: r.height, top: r.y, bottom: bottom}; })()" % self.comment_id)
                 self.b.scroll_to(rng_js, "the comment being replied to")
                 rng = self.b.js(rng_js)
                 buttons = [x for x in self.b.ax(SEL.REPLY_BUTTON) if rng["top"] < x["y"] < rng["bottom"]]
                 if len(buttons) != 1:
-                    raise Fail("expected one Reply control on comment %s, found %d" % (self.comment_id, len(buttons)))
+                    raise Fail("expected one Reply control on comment %s, found %d; nothing was clicked or typed"
+                               % (self.comment_id, len(buttons)))
+                self.opened = True      # from here on a click may have opened a box that holds text
                 self.b.click(buttons[0]["x"], buttons[0]["y"])
             else:
                 r = self.b.scroll_to(TRIGGER_RECT_JS, "the comment box")
+                self.opened = True      # from here on a click may have opened a box that holds text
                 self.b.click(r["x"], r["y"])
             self.b.wait_for(EDITORS_JS + ".length", "the opened comment editor", timeout=10)
         time.sleep(1.0)                 # the box fills in any saved text just after it appears
 
     def type(self, text, paras, title):
         with self.b.focused():
-            ed = self._editor()
+            ed = self._editor_in_view()
             self.b.click(ed["x"], ed["y"])
             time.sleep(0.4)
             held = _norm(self._editor()["text"])
@@ -280,11 +306,17 @@ class CommentSurface(object):
                 return
             if len(found) != 1:
                 raise Fail("expected exactly one open comment editor, found %d" % len(found))
-            self.b.click(found[0]["x"], found[0]["y"])
+            ed = self._editor_in_view()
+            self.b.click(ed["x"], ed["y"])
             self.b.select_all_and_delete()
             time.sleep(0.6)
             if _norm(self._editor()["text"]):
-                raise Fail("the comment editor still holds text after clearing it")
+                saved = self._saved()
+                raise Fail("the comment editor still holds text after clearing it, and %s. Nothing was "
+                           "pressed. Empty that box by hand before any other write to %s."
+                           % ("Reddit keeps a saved copy of it in this browser (%d characters) that comes back "
+                              "when the box opens again" % saved["chars"] if saved["matched"]
+                              else "Reddit keeps no saved copy of it", self.url))
 
     def cancel(self):
         """Close the box, remove the copy Reddit keeps of the unsent text, and
