@@ -89,13 +89,15 @@ class PaceLimitRefuses(StateCase):
         got = self.ledger.check("comment", "SubB", "a different comment about deploy scripts", now=NOW)
         self.assertEqual(got, [])
 
-    def test_two_comments_in_one_subreddit_within_an_hour_refuse(self):
-        self.send("comment", "SubA", "an earlier comment about build caches and flaky tests", ago=30 * 60)
+    def test_a_second_comment_in_one_subreddit_within_ten_minutes_refuses(self):
+        # One pace rule now covers this: the submission gap. There is no separate
+        # same-subreddit rule (removed 2026-09-13, owner decision).
+        self.send("comment", "SubA", "an earlier comment about build caches and flaky tests", ago=5 * 60)
         got = self.ledger.check("reply", "suba", "a reply about something else entirely", now=NOW)
-        self.assertIn("pace-same-subreddit", self.rule_of(got))
+        self.assertIn("pace-submission-gap", self.rule_of(got))
 
-    def test_the_same_subreddit_is_clear_after_an_hour(self):
-        self.send("comment", "SubA", "an earlier comment about build caches and flaky tests", ago=61 * 60)
+    def test_the_same_subreddit_is_clear_after_ten_minutes(self):
+        self.send("comment", "SubA", "an earlier comment about build caches and flaky tests", ago=11 * 60)
         self.assertEqual(self.ledger.check("comment", "SubA", "a new comment on another topic", now=NOW), [])
 
     def test_a_second_post_in_a_subreddit_within_a_day_refuses(self):

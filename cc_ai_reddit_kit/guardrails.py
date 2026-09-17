@@ -9,7 +9,6 @@ exists for other users of a public tool and is off by default.
   rules-not-fetched     a write refuses unless the subreddit's rules were read
                         from the live page IN THIS RUN (same process)
   pace-submission-gap   no two submissions of any kind within 10 minutes
-  pace-same-subreddit   no two comments or replies in one subreddit within 60 minutes
   pace-post-per-day     no more than one post per subreddit in any 24 hours
   near-duplicate        nothing that repeats text or phrasing sent in the last 30 days
   link                  no URL, markdown link, email address or bare domain
@@ -32,10 +31,8 @@ import uuid
 from .state import Fail, FileLock, Refused, home, read_json, write_json_atomic
 
 WRITE_KINDS = ("comment", "reply", "post")
-COMMENT_KINDS = ("comment", "reply")
 
 SUBMISSION_GAP = 10 * 60
-SAME_SUB_COMMENT_GAP = 60 * 60
 POST_WINDOW = 24 * 60 * 60
 POSTS_PER_SUB_IN_WINDOW = 1
 REPEAT_WINDOW = 30 * 24 * 60 * 60
@@ -210,14 +207,6 @@ def check_pace(kind, subreddit, attempts, now):
             return Refused("pace-submission-gap", "a %s was sent at %s; no two submissions within %d "
                            "minutes. Next allowed after %s."
                            % (row["kind"], row["iso"], SUBMISSION_GAP // 60, _clock(row["ts"] + SUBMISSION_GAP)))
-    if kind in COMMENT_KINDS:
-        for row in attempts:
-            if (row["kind"] in COMMENT_KINDS and row["subreddit"].lower() == sub
-                    and now - row["ts"] < SAME_SUB_COMMENT_GAP):
-                return Refused("pace-same-subreddit", "a %s went to r/%s at %s; no two comments in one "
-                               "subreddit within %d minutes. Next allowed after %s."
-                               % (row["kind"], row["subreddit"], row["iso"], SAME_SUB_COMMENT_GAP // 60,
-                                  _clock(row["ts"] + SAME_SUB_COMMENT_GAP)))
     if kind == "post":
         recent = [r for r in attempts if r["kind"] == "post" and r["subreddit"].lower() == sub
                   and now - r["ts"] < POST_WINDOW]

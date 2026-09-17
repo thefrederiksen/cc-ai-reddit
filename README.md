@@ -30,7 +30,7 @@ opt-out for other uses of a public tool.
 | Guardrail | What the tool does |
 |---|---|
 | Rules first | A write reads the subreddit's rules from the live page in the same run, prints them, and refuses if it cannot read them. |
-| Human pace | No two submissions of any kind within 10 minutes. No two comments or replies in one subreddit within 60 minutes. At most one post per subreddit in any 24 hours. Kept on disk, so it holds across runs. |
+| Human pace | No two submissions of any kind within 10 minutes. At most one post per subreddit in any 24 hours. Kept on disk, so it holds across runs. |
 | Repetition | Refuses anything that repeats text or phrasing sent in the last 30 days: identical text, a lightly edited copy, or any identical run of ten words. Reddit search finds repeated phrasing. |
 | No links | Refuses any URL, markdown link, email address or bare domain (`example.com`) in the text. `--allow-links` lifts this; even then, a text that is little more than a link is refused. |
 | No vote requests | Refuses text that asks for upvotes. |

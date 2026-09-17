@@ -102,7 +102,6 @@ composer is rich text and would post the asterisks.
 |---|---|
 | `rules-not-fetched` | a write whose subreddit rules were not read live in this run |
 | `pace-submission-gap` | a second submission of any kind within 10 minutes |
-| `pace-same-subreddit` | a second comment or reply in one subreddit within 60 minutes |
 | `pace-post-per-day` | a second post in one subreddit within 24 hours |
 | `near-duplicate` | text or phrasing repeating anything sent in 30 days (any identical 10-word run counts) |
 | `link` | any URL, markdown link, email address or bare domain |
