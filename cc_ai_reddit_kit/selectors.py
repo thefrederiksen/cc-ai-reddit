@@ -128,17 +128,26 @@ REMOVED_TEXT = re.compile(r"removed by (reddit|the moderators|moderators)|sorry,
 # out of the returned HTML. That answers the same way on every kind of page and
 # in a hidden tab. (The post page's own partial URL answers 406 to a plain
 # fetch; this one answers 200 with the full sidebar.)
-# Called with the partial's path as JSON. Returns {status, url, sidebar, rules}.
+# The partial names its community on shreddit-subreddit-header[name]; the
+# read checks it against the subreddit asked for. It also counts every
+# <details> in the aside, so a rule whose summary no longer parses is a
+# mismatch rather than a shorter list. no-store: the rules are read fresh.
+# Called with the partial's path as JSON.
+# Returns {status, url, subreddit, sidebar, details, rules}.
 RULES_PARTIAL = "/svc/shreddit/feeds/subreddit-right-rail?name=%s"
-RULES_JS = r"""fetch(%s, {credentials: 'include'}).then(r => r.text().then(t => {
-  const aside = new DOMParser().parseFromString(t, 'text/html').querySelector('aside[aria-label="Community information"]');
+RULES_JS = r"""fetch(%s, {credentials: 'include', cache: 'no-store'}).then(r => r.text().then(t => {
+  const doc = new DOMParser().parseFromString(t, 'text/html');
+  const header = doc.querySelector('shreddit-subreddit-header[name]');
+  const aside = doc.querySelector('aside[aria-label="Community information"]');
+  const details = aside ? aside.querySelectorAll('details').length : 0;
   const rules = aside ? [...aside.querySelectorAll('details')].map(d => {
     const s = d.querySelector('summary');
     const head = (s ? s.textContent : '').replace(/\s+/g, ' ').trim();
     const m = head.match(/^(\d+)\s+(.*)$/);
     return m ? {n: Number(m[1]), title: m[2], text: d.textContent.replace(s.textContent, '').replace(/\s+/g, ' ').trim()} : null;
   }).filter(Boolean) : [];
-  return {status: r.status, url: r.url, sidebar: !!aside, rules: rules};
+  return {status: r.status, url: r.url, subreddit: header ? header.getAttribute('name') : null,
+          sidebar: !!aside, details: details, rules: rules};
 }))"""
 
 # -- the comment composer ------------------------------------------ 2026-09-10

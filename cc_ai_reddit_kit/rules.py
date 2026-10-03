@@ -31,9 +31,16 @@ def read_sidebar(b, subreddit):
         raise Fail("the community sidebar of r/%s came back without its Community information section (%s), "
                    "so its rules could not be read. Reddit may have changed the sidebar; see RULES_JS in "
                    "selectors.py." % (subreddit, got.get("url")))
+    if (got.get("subreddit") or "").lower() != subreddit.lower():
+        raise Fail("the community sidebar fetched for r/%s names r/%s, so the rules of r/%s could not be read"
+                   % (subreddit, got.get("subreddit"), subreddit))
     if not got.get("rules"):
         raise Fail("the community sidebar of r/%s has no rules section. A write refuses where it cannot "
                    "read rules; look at the subreddit by hand." % subreddit)
+    if len(got["rules"]) != got.get("details"):
+        raise Fail("the community sidebar of r/%s holds %s rule entries but only %d read as a numbered rule, "
+                   "so its rules could not be read whole. Reddit may have changed the sidebar; see RULES_JS "
+                   "in selectors.py." % (subreddit, got.get("details"), len(got["rules"])))
     return got["rules"]
 
 

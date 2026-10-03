@@ -300,8 +300,8 @@ class Page(object):
             return {"post": {"id": "abc123", "subreddit": "SubA", "title": "a thread", "locked": False,
                              "archived": False}, "comments": []}
         if expr == SEL.RULES_JS % json.dumps(SEL.RULES_PARTIAL % "SubA"):
-            return {"status": 200, "url": "https://www.reddit.com" + SEL.RULES_PARTIAL % "SubA", "sidebar": True,
-                    "rules": RULES}
+            return {"status": 200, "url": "https://www.reddit.com" + SEL.RULES_PARTIAL % "SubA", "subreddit": "SubA",
+                    "sidebar": True, "details": len(RULES), "rules": RULES}
         if expr == "innerHeight":
             return self.HEIGHT
         if expr == W.EDITOR_RECT_JS:

@@ -9,6 +9,7 @@ import json
 import os
 import sys
 import unittest
+from urllib.parse import quote
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
@@ -23,8 +24,9 @@ PARTIAL_URL = "https://www.reddit.com/svc/shreddit/feeds/subreddit-right-rail?na
 class Page(object):
     """A www.reddit.com page that answers only the sidebar fetch for one subreddit."""
 
-    def __init__(self, answer):
+    def __init__(self, answer, sub="SubA"):
         self.answer = answer
+        self.sub = sub
         self.asked = []
 
     def url(self):
@@ -32,13 +34,16 @@ class Page(object):
 
     def js(self, expr):
         self.asked.append(expr)
-        if expr == SEL.RULES_JS % json.dumps(SEL.RULES_PARTIAL % "SubA"):
+        if expr == SEL.RULES_JS % json.dumps(SEL.RULES_PARTIAL % quote(self.sub)):
+            if isinstance(self.answer, Exception):
+                raise self.answer
             return self.answer
         raise AssertionError("the page model does not answer: %s" % expr[:120])
 
 
 def answer(**kw):
-    a = {"status": 200, "url": PARTIAL_URL, "sidebar": True, "rules": RULES}
+    a = {"status": 200, "url": PARTIAL_URL, "subreddit": "SubA", "sidebar": True, "details": len(RULES),
+         "rules": RULES}
     a.update(kw)
     return a
 
@@ -51,9 +56,33 @@ class ReadSidebar(unittest.TestCase):
         self.assertEqual(len(page.asked), 1)
         self.assertIn(json.dumps("/svc/shreddit/feeds/subreddit-right-rail?name=SubA"), page.asked[0])
 
+    def test_the_subreddit_name_is_matched_without_case(self):
+        self.assertEqual(R.read_sidebar(Page(answer(subreddit="suba")), "SubA"), RULES)
+
+    def test_a_sidebar_of_another_subreddit_fails(self):
+        with self.assertRaisesRegex(Fail, "names r/SubB"):
+            R.read_sidebar(Page(answer(subreddit="SubB")), "SubA")
+
+    def test_a_sidebar_that_names_no_subreddit_fails(self):
+        with self.assertRaisesRegex(Fail, "names r/None"):
+            R.read_sidebar(Page(answer(subreddit=None)), "SubA")
+
     def test_a_sidebar_without_rules_fails_and_says_so(self):
         with self.assertRaisesRegex(Fail, "has no rules section"):
-            R.read_sidebar(Page(answer(rules=[])), "SubA")
+            R.read_sidebar(Page(answer(rules=[], details=0)), "SubA")
+
+    def test_a_rule_that_does_not_parse_fails_rather_than_shortening_the_list(self):
+        with self.assertRaisesRegex(Fail, "holds 2 rule entries but only 1"):
+            R.read_sidebar(Page(answer(details=2)), "SubA")
+
+    def test_a_rejected_fetch_is_not_a_rule_list(self):
+        with self.assertRaisesRegex(RuntimeError, "fetch rejected"):
+            R.read_sidebar(Page(RuntimeError("fetch rejected")), "SubA")
+
+    def test_the_name_is_quoted_into_the_partial_url(self):
+        page = Page(answer(subreddit="a&b"), sub="a&b")
+        R.read_sidebar(page, "a&b")
+        self.assertIn("name=a%26b", page.asked[0])
 
     def test_an_answer_that_is_not_the_sidebar_fails(self):
         with self.assertRaisesRegex(Fail, "without its Community information section"):
