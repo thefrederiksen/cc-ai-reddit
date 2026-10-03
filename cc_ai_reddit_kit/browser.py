@@ -147,7 +147,13 @@ class Browser(object):
 
     def goto(self, url, timeout=45, settle=2.0):
         """Load a Reddit page and wait until it is really there: past any JS
-        challenge, shreddit-app present, document complete. Returns the URL."""
+        challenge, shreddit-app present, document parsed. Returns the URL.
+
+        Parsed, not complete: SEEN 2026-10-03, a subreddit page in a background
+        tab was reported not loaded after 45 seconds while its text was already
+        there. The load event waits for every subresource, which the tool never
+        needs: everything it reads is in the parsed document or fetched, and
+        controls are waited for one by one."""
         self._space()
         self.h.goto_url(url)
         deadline = time.time() + timeout
@@ -160,7 +166,7 @@ class Browser(object):
                     raise Fail("a %s dialog is open on the page (%r); refusing to guess an answer to it"
                                % (info["dialog"].get("type"), info["dialog"].get("message")))
                 cur = info["url"]
-                ready = self.js("document.readyState === 'complete' && !!document.querySelector('shreddit-app')")
+                ready = self.js("document.readyState !== 'loading' && !!document.querySelector('shreddit-app')")
             except (RuntimeError, TimeoutError, KeyError):
                 # MEASURED 2026-09-10: while a document is being replaced (and on
                 # one first load, for several seconds) evaluate times out. That

@@ -166,6 +166,15 @@ All measured on www.reddit.com, 2026-09-10.
   session. Rules are read from the community sidebar (`<details>` in
   `aside[aria-label="Community information"]`); read `textContent`, since a
   collapsed rule hides its description from `innerText`.
+- **On a post page the community sidebar is not there** (measured 2026-10-03).
+  It is a lazy `faceplate-partial` that loads only once scrolled into view,
+  which never happens in a background tab, so the aside is simply absent and
+  a read off the page waits forever. A screenshot of a subreddit page still
+  shows the rules, because there the sidebar comes with the page. The tool
+  fetches the sidebar's source, `/svc/shreddit/feeds/subreddit-right-rail?name=<sub>`,
+  from inside the open page and reads the same aside out of that HTML, which
+  works on any page and in a hidden tab. The post page's own partial URL
+  answers 406 to a plain fetch.
 - **Opening the message inbox marks it read.** Measured 2026-09-11: opening
   `/message/inbox/` in a tab dropped the account's unread count from 337 to
   300. `/message/inbox.json?mark=false`, and the page's HTML fetched without

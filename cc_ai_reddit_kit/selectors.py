@@ -112,18 +112,34 @@ THREAD_JS = r"""(() => {
 REMOVED_TEXT = re.compile(r"removed by (reddit|the moderators|moderators)|sorry, this post (was|has been) removed|"
                           r"\[\s*removed\s*(by reddit)?\s*\]|\[deleted\]", re.I)
 
-# -- rules --------------------------------------------------------- 2026-09-10
-# The community sidebar, lazy-loaded into faceplate-partial
-# #subreddit-right-rail__partial. Each rule is a <details> inside
+# -- rules --------------------------------------------------------- 2026-10-03
+# The community sidebar. Each rule is a <details> inside
 # aside[aria-label="Community information"]; the <summary> reads "<n>\n<title>"
 # and the description is the rest of the element's text. Read textContent, not
 # innerText: a collapsed <details> hides its description from innerText.
-RULES_JS = r"""[...document.querySelectorAll('aside[aria-label="Community information"] details')].map(d => {
-  const s = d.querySelector('summary');
-  const head = (s ? s.textContent : '').replace(/\s+/g, ' ').trim();
-  const m = head.match(/^(\d+)\s+(.*)$/);
-  return m ? {n: Number(m[1]), title: m[2], text: d.textContent.replace(s.textContent, '').replace(/\s+/g, ' ').trim()} : null;
-}).filter(Boolean)"""
+#
+# WHERE IT IS, measured 2026-10-03. On a subreddit page the sidebar is rendered
+# with the page. On a post page it is a faceplate-partial with loading="lazy"
+# that fetches itself only once scrolled into view, which never happens in the
+# background tab the tool works in: the aside is simply absent there. So the
+# tool does not read the sidebar off the page. It fetches the sidebar's source,
+# RULES_PARTIAL, from inside whatever www.reddit.com page is open (the
+# session's cookies go with it, no page script runs) and reads the same aside
+# out of the returned HTML. That answers the same way on every kind of page and
+# in a hidden tab. (The post page's own partial URL answers 406 to a plain
+# fetch; this one answers 200 with the full sidebar.)
+# Called with the partial's path as JSON. Returns {status, url, sidebar, rules}.
+RULES_PARTIAL = "/svc/shreddit/feeds/subreddit-right-rail?name=%s"
+RULES_JS = r"""fetch(%s, {credentials: 'include'}).then(r => r.text().then(t => {
+  const aside = new DOMParser().parseFromString(t, 'text/html').querySelector('aside[aria-label="Community information"]');
+  const rules = aside ? [...aside.querySelectorAll('details')].map(d => {
+    const s = d.querySelector('summary');
+    const head = (s ? s.textContent : '').replace(/\s+/g, ' ').trim();
+    const m = head.match(/^(\d+)\s+(.*)$/);
+    return m ? {n: Number(m[1]), title: m[2], text: d.textContent.replace(s.textContent, '').replace(/\s+/g, ' ').trim()} : null;
+  }).filter(Boolean) : [];
+  return {status: r.status, url: r.url, sidebar: !!aside, rules: rules};
+}))"""
 
 # -- the comment composer ------------------------------------------ 2026-09-10
 # Collapsed, it is a faceplate-textarea-input inside comment-composer-host,
